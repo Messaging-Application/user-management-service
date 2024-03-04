@@ -10,7 +10,6 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 public class EditRequest {
-    private String username;
     private String password;
     private String firstName;
     private String lastName;

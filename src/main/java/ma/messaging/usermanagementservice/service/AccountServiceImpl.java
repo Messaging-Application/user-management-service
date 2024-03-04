@@ -42,68 +42,74 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public ResponseEntity<?> userEdit(@PathVariable("id") int id, EditRequest request, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
-        Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
-                                                  .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-        Account oldAccount = accountRepository.findById(id)
-                                        .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-        String usernameFromId = oldAccount.getUsername();
+        try {
+            Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            Account oldAccount = accountRepository.findById(id)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+                                              
+            String usernameFromId = oldAccount.getUsername();
 
-        boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
+            boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
 
-        if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to edit this item.");
-        }
-
-        String newUsername = request.getUsername();
-        String newEmail = request.getEmail();
-        String newFirstName = request.getFirstName();
-        String newLastName = request.getLastName();
-        String newPassword = request.getPassword();
-
-        if (newUsername != null) {
-            if (accountRepository.existsByUsername(newUsername) && !newUsername.equals(oldAccount.getUsername())) {
-                return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
+            if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to edit this item.");
             }
-            oldAccount.setUsername(newUsername);
-        }
 
-        if (newEmail != null) {
-            if (accountRepository.existsByEmail(newEmail) && !newEmail.equals(oldAccount.getEmail())) {
-                return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already taken!"));
+            String newEmail = request.getEmail();
+            String newFirstName = request.getFirstName();
+            String newLastName = request.getLastName();
+            String newPassword = request.getPassword();
+
+
+            if (newEmail != null) {
+                if (accountRepository.existsByEmail(newEmail) && !newEmail.equals(oldAccount.getEmail())) {
+                    return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already taken!"));
+                }
+                oldAccount.setEmail(newEmail);
             }
-            oldAccount.setEmail(newEmail);
+
+            if (newFirstName != null) {
+                oldAccount.setFirstName(newFirstName);
+            }
+
+            if (newLastName != null) {
+                oldAccount.setLastName(newLastName);
+            }
+
+            if (newPassword != null) {
+                oldAccount.setPassword(passwordEncoder.encode(newPassword));
+            }
+
+            accountRepository.save(oldAccount);
+            
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
 
-        if (newFirstName != null) {
-            oldAccount.setFirstName(newFirstName);
-        }
-
-        if (newLastName != null) {
-            oldAccount.setLastName(newLastName);
-        }
-
-        if (newPassword != null) {
-            oldAccount.setPassword(passwordEncoder.encode(newPassword));
-        }
-
-        accountRepository.save(oldAccount);
         return ResponseEntity.ok(new MessageResponse("User data updated successfully!"));
     }
 
     @Override
     public ResponseEntity<?> userDelete(@PathVariable("id") int id, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
-        Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
-                                                  .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-        Account user = accountRepository.findById(id)
-                                        .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-        String usernameFromId = user.getUsername();
+        try {
+            Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            Account user = accountRepository.findById(id)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            
+            String usernameFromId = user.getUsername();
 
-        boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
+            boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
 
-        if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
+            if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
+
         accountRepository.deleteById(id);
         return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
     }
@@ -111,19 +117,25 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public ResponseEntity<?> getUser(@PathVariable("id") int id, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
-        Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
-                                                  .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-        Account user = accountRepository.findById(id)
-                                        .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-        String usernameFromId = user.getUsername();
+        try {
+            Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            Account user = accountRepository.findById(id)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            
+            String usernameFromId = user.getUsername();
 
-        boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
+            boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
 
-        if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to see this item.");
+            if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
+            }
+
+            user.setPassword("");
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
-        user.setPassword("");
-        return ResponseEntity.ok(user);
     }
 }
 

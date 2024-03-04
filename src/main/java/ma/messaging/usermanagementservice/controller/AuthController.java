@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 
 @CrossOrigin(origins = "http://localhost:5173", maxAge = 3600, allowCredentials = "true")
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/user")
 public class AuthController {
 
     private final AccountService accountService;
@@ -36,7 +36,7 @@ public class AuthController {
         return accountService.userDelete(id, jwtToken);
     }
 
-    @GetMapping("/user/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable("id") int id, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
         return accountService.getUser(id, jwtToken);
     }
