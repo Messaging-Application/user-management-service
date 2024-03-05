@@ -11,6 +11,8 @@ services:
     networks:
       - mynetwork
   user-management-service:
+    container_name: user-management-service
+    image: user-management-service
     build: .
     ports:
       - "8081:8081"

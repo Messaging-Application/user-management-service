@@ -82,4 +82,23 @@ public class AccountRepositoryTest {
         Optional<Account> notFoundAccount = accountRepository.findByUsername("nonExistingUser");
         assertFalse("Account should not be found", notFoundAccount.isPresent());
     }
+
+    @Test
+    void testFindById() {
+        // Test findById
+        Optional<Account> foundAccount = accountRepository.findById(1);
+        Assertions.assertTrue(foundAccount.isPresent(), "Account should be found with id = 1");
+
+        // Test findById for an id that does not exist
+        Optional<Account> notFoundAccount = accountRepository.findById(2);
+        assertFalse("Account should not be found", notFoundAccount.isPresent());
+    }
+
+    @Test
+    void testDeleteById() {
+        // Test deleteById
+        accountRepository.deleteById(1);
+        Optional<Account> foundAccount = accountRepository.findById(1);
+        Assertions.assertFalse(foundAccount.isPresent(), "Account should not be found with id = 1");
+    }
 }
