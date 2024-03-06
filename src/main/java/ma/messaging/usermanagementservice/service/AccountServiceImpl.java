@@ -24,6 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 
 import java.util.HashSet;
 import java.util.List;
@@ -142,12 +145,14 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ResponseEntity<?> getUsers(@CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
+    public ResponseEntity<?> getUsers(@CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken, int pageNo, int pageSize) {
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-            List<Account> allUsers = accountRepository.findAll();
+            Pageable pageable = PageRequest.of(pageNo, pageSize);
+            Page<Account> accountPage = accountRepository.findAll(pageable);
+            List<Account> allUsers = accountPage.getContent();
 
             for (Account user : allUsers) {
                 if (user != userRequesting) {
