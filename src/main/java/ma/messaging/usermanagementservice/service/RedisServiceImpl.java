@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class RedisServiceImpl implements RedisService {
@@ -25,6 +26,12 @@ public class RedisServiceImpl implements RedisService {
     public String getValueByKey(String key) {
         return jedis.get(key); // Retrieve value by key from Redis
     }
+    
+    @Override
+    public boolean exists(String key) {
+        return jedis.exists(key);
+    }
+
 
     @Override
     public Map<String, String> getAllKeyValuePairs() {
@@ -39,5 +46,19 @@ public class RedisServiceImpl implements RedisService {
         }
 
         return keyValuePairs;
+    }
+
+    @Override
+    public String generateChatId(String userId1, String userId2) {
+        String concatenatedIds = userId1 + "_" + userId2;
+        UUID uuid = UUID.nameUUIDFromBytes(concatenatedIds.getBytes());
+        return uuid.toString();
+    }
+
+    @Override
+    public boolean isUserPairInRedis(String userId1, String userId2) {
+        String uniqueId = generateChatId(userId1, userId2);
+        String redisKey = "chat:" + uniqueId;
+        return exists(redisKey);
     }
 }

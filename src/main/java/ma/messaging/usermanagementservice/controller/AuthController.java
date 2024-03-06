@@ -43,7 +43,7 @@ public class AuthController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<?> getUsers(@CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken, @RequestParam(defaultValue = "0") int pageNo, @RequestParam(defaultValue = "10") int pageSize) {
+    public ResponseEntity<?> getUsers(@CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken, @RequestParam(defaultValue = "0") int pageNo, @RequestParam(defaultValue = "3") int pageSize) {
         return accountService.getUsers(jwtToken, pageNo, pageSize);
     }
 }
