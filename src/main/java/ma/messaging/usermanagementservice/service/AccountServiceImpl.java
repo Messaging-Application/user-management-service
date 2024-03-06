@@ -24,10 +24,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import java.util.stream.Collectors;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +44,7 @@ public class AccountServiceImpl implements AccountService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final RedisService redisService;
 
     @Override
     public ResponseEntity<?> userEdit(@PathVariable("id") int id, EditRequest request, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
@@ -50,9 +57,14 @@ public class AccountServiceImpl implements AccountService {
                                               
             String usernameFromId = oldAccount.getUsername();
 
-            boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
-
-            if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
+            boolean[] isAdmin = { false };
+            Set<Role> strRoles = userRequesting.getRoles();
+            strRoles.forEach(role -> {
+                if ((role.getName()).equals("ROLE_ADMIN")) {
+                    isAdmin[0] = true; // Update the value by accessing the first element of the array
+                } 
+            });
+            if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to edit this item.");
             }
 
@@ -100,16 +112,19 @@ public class AccountServiceImpl implements AccountService {
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
             
             String usernameFromId = user.getUsername();
-
-            boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
-
-            if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
+            boolean[] isAdmin = { false };
+            Set<Role> strRoles = userRequesting.getRoles();
+            strRoles.forEach(role -> {
+                if ((role.getName()).equals("ROLE_ADMIN")) {
+                    isAdmin[0] = true; 
+                } 
+            });
+            if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
-
         accountRepository.deleteById(id);
         return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
     }
@@ -125,9 +140,14 @@ public class AccountServiceImpl implements AccountService {
             
             String usernameFromId = user.getUsername();
 
-            boolean isAdmin = userRequesting.getRoles().stream().anyMatch(role -> role.getName().equals("admin"));
-
-            if (!usernameFromJwt.equals(usernameFromId) && isAdmin == false) {
+            boolean[] isAdmin = { false };
+            Set<Role> strRoles = userRequesting.getRoles();
+            strRoles.forEach(role -> {
+                if ((role.getName()).equals("ROLE_ADMIN")) {
+                    isAdmin[0] = true; // Update the value by accessing the first element of the array
+                } 
+            });
+            if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
 
@@ -135,6 +155,49 @@ public class AccountServiceImpl implements AccountService {
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getUsers(@CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken, int pageNo, int pageSize) {
+        String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        try {
+            Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            Pageable pageable = PageRequest.of(pageNo, pageSize);
+            Page<Account> accountPage = accountRepository.findAll(pageable);
+
+            List<Account> allUsers = accountPage.getContent().stream()
+                                                            .filter(account -> !account.getUsername().equals(userRequesting.getUsername()))
+                                                            .collect(Collectors.toList());
+            for (Account user : allUsers) {
+                if (!redisService.isUserPairInRedis(String.valueOf(userRequesting.getId()), String.valueOf(user.getId()))) {
+                    String uniqueId = redisService.generateChatId(String.valueOf(userRequesting.getId()), String.valueOf(user.getId()));
+                    String redisKey = "chat:" + uniqueId;
+                    String jsonValue = "{\"user1\": {" +
+                    "\"username\": \"" + userRequesting.getUsername() + "\", " +
+                    "\"id\": \"" + userRequesting.getId() + "\", " +
+                    "\"email\": \"" + userRequesting.getEmail() + "\", " +
+                    "\"lastName\": \"" + userRequesting.getLastName() + "\", " +
+                    "\"firstName\": \"" + userRequesting.getFirstName() + "\"}, " +
+                    "\"user2\": {" +
+                    "\"username\": \"" + user.getUsername() + "\", " +
+                    "\"id\": \"" + user.getId() + "\", " +
+                    "\"email\": \"" + user.getEmail() + "\", " +
+                    "\"lastName\": \"" + user.getLastName() + "\", " +
+                    "\"firstName\": \"" + user.getFirstName() + "\"}}";
+                    redisService.storeKeyValuePair(redisKey, jsonValue);
+                }
+            }
+            Map<String, String> redisData = redisService.getAllKeyValuePairs();
+            for (Map.Entry<String, String> entry : redisData.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+            }
+            return ResponseEntity.ok(redisData);
+        } catch (RuntimeException e) {
+            e.printStackTrace(); 
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No users found");
         }
     }
 }
