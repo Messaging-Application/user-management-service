@@ -1,25 +1,78 @@
-name: Build, Test and Push
+name: Build, Test, Push, Measure Coverage with Jacoco
+
 on:
   push:
     branches:
       - "**"
-  pull_request:
-    branches:
-      - "**"
-env:
-  IMAGE_NAME: user-management-service
-  # REPO_NAME: 
+  pull_request_target:
+    types: [opened, synchronize, reopened] 
 
 jobs:
-  build:
+  docker:
     runs-on: ubuntu-latest
     steps:
-    - name: checkout-code
-      uses: actions/checkout@v2
-    - name: Build docker image
-      run: |
-        docker build . -t $IMAGE_NAME
-    - name: Run docker container
-      run: |
-        docker run -d -e 8081:8081 -host=172.17.0.2 $IMAGE_NAME:latest && \
-          docker ps && sleep 5
+      - name: checkout-code
+        uses: actions/checkout@v4.1.1
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and run docker containers
+        run: |
+          docker-compose up -d && \
+            docker ps && sleep 5
+
+      - name: Build and push to Docker Hub
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: .
+          push: true
+          tags: dasha12678/user-management-service:latest
+
+  test_coverage:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: 123
+          POSTGRES_DB: users_db
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: checkout-code
+        uses: actions/checkout@v4.1.1
+
+      - name: Set up JDK  
+        uses: actions/setup-java@v4.1.0
+        with:
+          distribution: 'temurin' 
+          java-version: 17
+
+      - name: Clean Maven project
+        run: mvn clean
+
+      - name: Run Maven tests
+        run: mvn test -Dspring.datasource.url=jdbc:postgresql://localhost:5432/users_db -Dspring.datasource.username=admin -Dspring.datasource.password=123
+
+      - name: Generate Jacoco Report
+        run: mvn jacoco:report
+
+      - name: Upload Jacoco coverage report
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/index.html
+
+      - name: Verify coverage
+        uses: madrapps/jacoco-report@v1.6.1 #github action to parse the coverage report and verify the coverage?
+        with:
+          paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.TOKEN }}
+          min-coverage-overall: 80

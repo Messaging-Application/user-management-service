@@ -1,15 +1,15 @@
 version: '3'
 services:
-  # mypostgres:
-  #   image: postgres
-  #   environment:
-  #     POSTGRES_PASSWORD: 123
-  #     POSTGRES_DB: users_db
-  #     POSTGRES_USER: admin
-  #   ports:
-  #     - "5432:5432"
-  #   networks:
-  #     - mynetwork
+  mypostgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: users_db
+      POSTGRES_USER: admin
+    ports:
+      - "5432:5432"
+    networks:
+      - mynetwork
   redis:
     container_name: redis
     image: redis
@@ -24,7 +24,7 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      # - mypostgres
+      - mypostgres
       - redis
     networks:
       - mynetwork
