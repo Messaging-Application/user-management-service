@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.CookieValue;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class AccountServiceImpl implements AccountService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final RedisService redisService;
 
     @Override
     public ResponseEntity<?> userEdit(@PathVariable("id") int id, EditRequest request, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
@@ -135,6 +138,36 @@ public class AccountServiceImpl implements AccountService {
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getUsers(@CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
+        String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        try {
+            Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
+                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            List<Account> allUsers = accountRepository.findAll();
+
+            for (Account user : allUsers) {
+                if (user != userRequesting) {
+                    String uniqueId = UUID.randomUUID().toString();
+                    String redisKey = "chat:" + uniqueId;
+                    // userRequesting.setPassword("");
+                    // user.setPassword("");
+                    String jsonValue = "{\"user1\": \"" + userRequesting.getUsername() + "\", \"user2\": \"" + user.getUsername() + "\"}";
+                    redisService.storeKeyValuePair(redisKey, jsonValue);
+                }
+            }
+            Map<String, String> redisData = redisService.getAllKeyValuePairs();
+            for (Map.Entry<String, String> entry : redisData.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+            }
+            return ResponseEntity.ok(redisData);
+        } catch (RuntimeException e) {
+            e.printStackTrace(); 
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No users found");
         }
     }
 }

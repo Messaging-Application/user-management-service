@@ -40,4 +40,9 @@ public class AuthController {
     public ResponseEntity<?> getUser(@PathVariable("id") int id, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
         return accountService.getUser(id, jwtToken);
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<?> getUsers(@CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
+        return accountService.getUsers(jwtToken);
+    }
 }
