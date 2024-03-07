@@ -58,10 +58,11 @@ public class AccountServiceImpl implements AccountService {
             String usernameFromId = oldAccount.getUsername();
 
             boolean[] isAdmin = { false };
-            Set<Role> strRoles = userRequesting.getRoles();
-            strRoles.forEach(role -> {
-                if ((role.getName()).equals("ROLE_ADMIN")) {
-                    isAdmin[0] = true; // Update the value by accessing the first element of the array
+            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
+            roles.forEach(role -> {
+                System.out.println(role.getName());
+                if (role.getName() == ERole.ROLE_ADMIN) {
+                    isAdmin[0] = true; 
                 } 
             });
             if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
@@ -94,7 +95,7 @@ public class AccountServiceImpl implements AccountService {
             }
 
             accountRepository.save(oldAccount);
-            
+            redisService.editUserInRedis(oldAccount);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
@@ -113,19 +114,22 @@ public class AccountServiceImpl implements AccountService {
             
             String usernameFromId = user.getUsername();
             boolean[] isAdmin = { false };
-            Set<Role> strRoles = userRequesting.getRoles();
-            strRoles.forEach(role -> {
-                if ((role.getName()).equals("ROLE_ADMIN")) {
+            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
+            roles.forEach(role -> {
+                System.out.println(role.getName());
+                if (role.getName() == ERole.ROLE_ADMIN) {
                     isAdmin[0] = true; 
                 } 
             });
             if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
+            accountRepository.deleteById(id);
+            redisService.deleteUserFromRedis(user);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
-        accountRepository.deleteById(id);
+
         return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
     }
 
@@ -141,12 +145,14 @@ public class AccountServiceImpl implements AccountService {
             String usernameFromId = user.getUsername();
 
             boolean[] isAdmin = { false };
-            Set<Role> strRoles = userRequesting.getRoles();
-            strRoles.forEach(role -> {
-                if ((role.getName()).equals("ROLE_ADMIN")) {
-                    isAdmin[0] = true; // Update the value by accessing the first element of the array
+            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
+            roles.forEach(role -> {
+                System.out.println(role.getName());
+                if (role.getName() == ERole.ROLE_ADMIN) {
+                    isAdmin[0] = true; 
                 } 
             });
+
             if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
@@ -189,11 +195,12 @@ public class AccountServiceImpl implements AccountService {
                     redisService.storeKeyValuePair(redisKey, jsonValue);
                 }
             }
-            Map<String, String> redisData = redisService.getAllKeyValuePairs();
-            for (Map.Entry<String, String> entry : redisData.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue();
-            }
+            Map<String, String> redisData = redisService.getAllKeyValuePairs(userRequesting);
+            // for (Map.Entry<String, String> entry : redisData.entrySet()) {
+            //     String key = entry.getKey();
+            //     String value = entry.getValue();
+
+            // }
             return ResponseEntity.ok(redisData);
         } catch (RuntimeException e) {
             e.printStackTrace(); 

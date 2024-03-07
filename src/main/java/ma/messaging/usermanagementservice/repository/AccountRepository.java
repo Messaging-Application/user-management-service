@@ -1,10 +1,13 @@
 package ma.messaging.usermanagementservice.repository;
 
 import ma.messaging.usermanagementservice.model.Account;
+import ma.messaging.usermanagementservice.model.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Integer> {
@@ -17,4 +20,7 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     Optional<Account> findById(int id);
 
     void deleteById(int id);
+
+    @Query("SELECT a.roles FROM Account a WHERE a.id = :accountId")
+    List<Role> findRolesByAccountId(@Param("accountId") int accountId);
 }
