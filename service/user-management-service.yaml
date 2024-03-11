@@ -8,6 +8,8 @@ spec:
   - port: 8081 #port for user-management-service
     protocol: TCP
     name: http
+  selector:
+    app:  user-management-service
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -16,9 +18,12 @@ metadata:
 spec:
   selector:
     matchLabels:
-      io.kompose.service: user-management-service
+      app:  user-management-service
   replicas: 1
   template:
+    metadata:
+      labels:
+        app:  user-management-service
     spec:
       containers:
       - image: user-management-service
