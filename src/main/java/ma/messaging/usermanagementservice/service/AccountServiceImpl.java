@@ -48,6 +48,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ResponseEntity<?> userEdit(@PathVariable("id") int id, EditRequest request, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
+        // get user that is doing the request
+        // find account that will be edited
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
@@ -57,6 +59,7 @@ public class AccountServiceImpl implements AccountService {
                                               
             String usernameFromId = oldAccount.getUsername();
 
+            // if user requesting isnt admin and wants to change someone else's data, do not allow 
             boolean[] isAdmin = { false };
             List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
             roles.forEach(role -> {
@@ -74,7 +77,7 @@ public class AccountServiceImpl implements AccountService {
             String newLastName = request.getLastName();
             String newPassword = request.getPassword();
 
-
+            // if the email is taken, by another user, dont allow it
             if (newEmail != null) {
                 if (accountRepository.existsByEmail(newEmail) && !newEmail.equals(oldAccount.getEmail())) {
                     return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already taken!"));
@@ -95,6 +98,7 @@ public class AccountServiceImpl implements AccountService {
             }
 
             accountRepository.save(oldAccount);
+            // update redis according to the database
             redisService.editUserInRedis(oldAccount);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -105,6 +109,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ResponseEntity<?> userDelete(@PathVariable("id") int id, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
+        // get user that is doing the request
+        // find account that will be deleted
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
@@ -112,6 +118,7 @@ public class AccountServiceImpl implements AccountService {
             Account user = accountRepository.findById(id)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
             
+            // if user requesting isnt admin and wants to delete someone else's account, do not allow 
             String usernameFromId = user.getUsername();
             boolean[] isAdmin = { false };
             List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
@@ -125,6 +132,7 @@ public class AccountServiceImpl implements AccountService {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
             accountRepository.deleteById(id);
+            // update redis according to the database
             redisService.deleteUserFromRedis(user);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -135,6 +143,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ResponseEntity<?> getUser(@PathVariable("id") int id, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
+        // get user that is doing the request
+        // find account that will be deleted
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
@@ -142,8 +152,8 @@ public class AccountServiceImpl implements AccountService {
             Account user = accountRepository.findById(id)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
             
+            // if user requesting isnt admin and wants to delete someone else's account, do not allow 
             String usernameFromId = user.getUsername();
-
             boolean[] isAdmin = { false };
             List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
             roles.forEach(role -> {
@@ -156,7 +166,7 @@ public class AccountServiceImpl implements AccountService {
             if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
-
+            // do not return password
             user.setPassword("");
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
@@ -170,12 +180,15 @@ public class AccountServiceImpl implements AccountService {
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            // add pagination
             Pageable pageable = PageRequest.of(pageNo, pageSize);
             Page<Account> accountPage = accountRepository.findAll(pageable);
 
+            // get all users except the one requesting
             List<Account> allUsers = accountPage.getContent().stream()
                                                             .filter(account -> !account.getUsername().equals(userRequesting.getUsername()))
                                                             .collect(Collectors.toList());
+            // create pairs of user requesting and every other user, and generate a chat id for every pair
             for (Account user : allUsers) {
                 if (!redisService.isUserPairInRedis(String.valueOf(userRequesting.getId()), String.valueOf(user.getId()))) {
                     String uniqueId = redisService.generateChatId(String.valueOf(userRequesting.getId()), String.valueOf(user.getId()));
@@ -196,11 +209,6 @@ public class AccountServiceImpl implements AccountService {
                 }
             }
             Map<String, String> redisData = redisService.getAllKeyValuePairs(userRequesting);
-            // for (Map.Entry<String, String> entry : redisData.entrySet()) {
-            //     String key = entry.getKey();
-            //     String value = entry.getValue();
-
-            // }
             return ResponseEntity.ok(redisData);
         } catch (RuntimeException e) {
             e.printStackTrace(); 
