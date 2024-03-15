@@ -47,7 +47,12 @@ public class RedisServiceImpl implements RedisService {
                 Gson gson = new Gson();
                 JsonObject jsonObject = gson.fromJson(value, JsonObject.class);
                 int user1Id = jsonObject.getAsJsonObject("user1").get("id").getAsInt();
+                int user2Id = jsonObject.getAsJsonObject("user2").get("id").getAsInt();
+
                 if (user1Id == user.getId()) {
+                    keyValuePairs.put(key, value);
+                }
+                if (user2Id == user.getId()) {
                     keyValuePairs.put(key, value);
                 }
             }
@@ -66,7 +71,9 @@ public class RedisServiceImpl implements RedisService {
     public boolean isUserPairInRedis(String userId1, String userId2) {
         String uniqueId = generateChatId(userId1, userId2);
         String redisKey = "chat:" + uniqueId;
-        return exists(redisKey);
+        String uniqueIdRevertedPair = generateChatId(userId2, userId1);
+        String redisKeyRevertedPair = "chat:" + uniqueIdRevertedPair;
+        return (exists(redisKey) || exists(redisKeyRevertedPair));
     }
 
     @Override
