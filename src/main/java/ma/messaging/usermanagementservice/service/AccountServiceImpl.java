@@ -5,6 +5,7 @@ import ma.messaging.usermanagementservice.model.Account;
 import ma.messaging.usermanagementservice.model.ERole;
 import ma.messaging.usermanagementservice.model.Role;
 import ma.messaging.usermanagementservice.payload.requests.EditRequest;
+import ma.messaging.usermanagementservice.payload.responses.RedisResponse;
 import ma.messaging.usermanagementservice.payload.responses.MessageResponse;
 import ma.messaging.usermanagementservice.payload.responses.UserInfoResponse;
 import ma.messaging.usermanagementservice.repository.AccountRepository;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import java.util.stream.Collectors;
 
 import java.util.HashSet;
@@ -144,7 +146,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public ResponseEntity<?> getUser(@PathVariable("id") int id, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
         // get user that is doing the request
-        // find account that will be deleted
+        // find account 
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
@@ -152,7 +154,7 @@ public class AccountServiceImpl implements AccountService {
             Account user = accountRepository.findById(id)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
             
-            // if user requesting isnt admin and wants to delete someone else's account, do not allow 
+            // if user requesting isnt admin and wants to get someone else's account, do not allow 
             String usernameFromId = user.getUsername();
             boolean[] isAdmin = { false };
             List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
@@ -183,10 +185,10 @@ public class AccountServiceImpl implements AccountService {
             // add pagination
             Pageable pageable = PageRequest.of(pageNo, pageSize);
             Page<Account> accountPage = accountRepository.findAll(pageable);
-
+            
             // get all users except the one requesting
             List<Account> allUsers = accountPage.getContent().stream()
-                                                            .filter(account -> !account.getUsername().equals(userRequesting.getUsername()))
+                                                            // .filter(account -> !account.getUsername().equals(userRequesting.getUsername()))
                                                             .collect(Collectors.toList());
             // create pairs of user requesting and every other user, and generate a chat id for every pair
             for (Account user : allUsers) {
@@ -209,7 +211,9 @@ public class AccountServiceImpl implements AccountService {
                 }
             }
             Map<String, String> redisData = redisService.getAllKeyValuePairs(userRequesting);
-            return ResponseEntity.ok(redisData);
+            int totalPages = accountPage.getTotalPages();
+            RedisResponse response = new RedisResponse(redisData, totalPages);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             e.printStackTrace(); 
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No users found");
