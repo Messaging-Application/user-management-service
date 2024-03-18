@@ -63,7 +63,7 @@ public class AccountServiceImpl implements AccountService {
 
             // if user requesting isnt admin and wants to change someone else's data, do not allow 
             boolean[] isAdmin = { false };
-            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
+            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getAccount_id());
             roles.forEach(role -> {
                 System.out.println(role.getName());
                 if (role.getName() == ERole.ROLE_ADMIN) {
@@ -123,7 +123,7 @@ public class AccountServiceImpl implements AccountService {
             // if user requesting isnt admin and wants to delete someone else's account, do not allow 
             String usernameFromId = user.getUsername();
             boolean[] isAdmin = { false };
-            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
+            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getAccount_id());
             roles.forEach(role -> {
                 System.out.println(role.getName());
                 if (role.getName() == ERole.ROLE_ADMIN) {
@@ -157,7 +157,7 @@ public class AccountServiceImpl implements AccountService {
             // if user requesting isnt admin and wants to get someone else's account, do not allow 
             String usernameFromId = user.getUsername();
             boolean[] isAdmin = { false };
-            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getId());
+            List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getAccount_id());
             roles.forEach(role -> {
                 System.out.println(role.getName());
                 if (role.getName() == ERole.ROLE_ADMIN) {
@@ -192,18 +192,18 @@ public class AccountServiceImpl implements AccountService {
                                                             .collect(Collectors.toList());
             // create pairs of user requesting and every other user, and generate a chat id for every pair
             for (Account user : allUsers) {
-                if (!redisService.isUserPairInRedis(String.valueOf(userRequesting.getId()), String.valueOf(user.getId()))) {
-                    String uniqueId = redisService.generateChatId(String.valueOf(userRequesting.getId()), String.valueOf(user.getId()));
+                if (!redisService.isUserPairInRedis(String.valueOf(userRequesting.getAccount_id()), String.valueOf(user.getAccount_id()))) {
+                    String uniqueId = redisService.generateChatId(String.valueOf(userRequesting.getAccount_id()), String.valueOf(user.getAccount_id()));
                     String redisKey = "chat:" + uniqueId;
                     String jsonValue = "{\"user1\": {" +
                     "\"username\": \"" + userRequesting.getUsername() + "\", " +
-                    "\"id\": \"" + userRequesting.getId() + "\", " +
+                    "\"id\": \"" + userRequesting.getAccount_id() + "\", " +
                     "\"email\": \"" + userRequesting.getEmail() + "\", " +
                     "\"lastName\": \"" + userRequesting.getLastName() + "\", " +
                     "\"firstName\": \"" + userRequesting.getFirstName() + "\"}, " +
                     "\"user2\": {" +
                     "\"username\": \"" + user.getUsername() + "\", " +
-                    "\"id\": \"" + user.getId() + "\", " +
+                    "\"id\": \"" + user.getAccount_id() + "\", " +
                     "\"email\": \"" + user.getEmail() + "\", " +
                     "\"lastName\": \"" + user.getLastName() + "\", " +
                     "\"firstName\": \"" + user.getFirstName() + "\"}}";
