@@ -133,7 +133,7 @@ public class AccountServiceImpl implements AccountService {
             if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
-            accountRepository.deleteById(id);
+            accountRepository.deleteAccountByAccount_id(id);
             // update redis according to the database
             redisService.deleteUserFromRedis(user);
         } catch (RuntimeException e) {
