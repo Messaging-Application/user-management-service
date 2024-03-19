@@ -3,7 +3,7 @@ name: Continuous Deployment
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request_target:
     types: [opened, synchronize, reopened] 
 
