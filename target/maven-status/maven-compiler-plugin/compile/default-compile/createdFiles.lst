@@ -13,8 +13,8 @@ ma/messaging/usermanagementservice/repository/RoleRepository.class
 ma/messaging/usermanagementservice/payload/requests/EditRequest.class
 ma/messaging/usermanagementservice/security/SecurityConfig.class
 ma/messaging/usermanagementservice/security/services/UserDetailsServiceImpl.class
-ma/messaging/usermanagementservice/service/AccountServiceImpl.class
 ma/messaging/usermanagementservice/service/RedisService.class
+ma/messaging/usermanagementservice/service/AccountServiceImpl.class
 ma/messaging/usermanagementservice/security/jwt/AuthEntryPointJwt.class
 ma/messaging/usermanagementservice/model/ERole.class
 ma/messaging/usermanagementservice/repository/AccountRepository.class

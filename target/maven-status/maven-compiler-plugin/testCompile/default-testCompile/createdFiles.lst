@@ -1,6 +1,6 @@
+ma/messaging/usermanagementservice/AccountManagementServiceApplicationTests.class
 ma/messaging/usermanagementservice/repository/RoleRepositoryTest.class
 ma/messaging/usermanagementservice/controller/AuthControllerTest.class
-ma/messaging/usermanagementservice/AccountManagementServiceApplicationTests.class
 ma/messaging/usermanagementservice/repository/AccountRepositoryTest.class
 ma/messaging/usermanagementservice/auth/AuthServiceTest.class
 ma/messaging/usermanagementservice/repository/AccountRepositoryTest$1.class

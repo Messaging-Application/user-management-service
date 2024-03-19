@@ -12,6 +12,8 @@ import ma.messaging.usermanagementservice.repository.AccountRepository;
 import ma.messaging.usermanagementservice.repository.RoleRepository;
 import ma.messaging.usermanagementservice.security.jwt.JwtUtils;
 import ma.messaging.usermanagementservice.security.services.UserDetailsImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +49,8 @@ public class AccountServiceImpl implements AccountService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final RedisService redisService;
+
+    private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
 
     @Override
     public ResponseEntity<?> userEdit(@PathVariable("id") int id, EditRequest request, @CookieValue(name = "${application.security.jwt.cookie-name}", required = true) String jwtToken) {
@@ -114,21 +118,25 @@ public class AccountServiceImpl implements AccountService {
         // get user that is doing the request
         // find account that will be deleted
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        logger.info(String.format("usernameFromJwt=%s", usernameFromJwt));
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
-                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+                    .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            logger.info(String.format("userRequesting=%s", userRequesting));
+
             Account user = accountRepository.findAccountByAccount_id(id)
-                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-            
+                    .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            logger.info(String.format("user=%s", user));
+
             // if user requesting isnt admin and wants to delete someone else's account, do not allow 
             String usernameFromId = user.getUsername();
-            boolean[] isAdmin = { false };
+            boolean[] isAdmin = {false};
             List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getAccount_id());
             roles.forEach(role -> {
                 System.out.println(role.getName());
                 if (role.getName() == ERole.ROLE_ADMIN) {
-                    isAdmin[0] = true; 
-                } 
+                    isAdmin[0] = true;
+                }
             });
             if (!usernameFromJwt.equals(usernameFromId) && isAdmin[0] == false) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
