@@ -117,7 +117,7 @@ public class AccountServiceImpl implements AccountService {
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-            Account user = accountRepository.findById(id)
+            Account user = accountRepository.findAccountByAccount_id(id)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
             
             // if user requesting isnt admin and wants to delete someone else's account, do not allow 
