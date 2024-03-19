@@ -20,6 +20,24 @@
     <!--Profiles: PROD, DEV-->
     <profiles>
         <profile>
+            <id>local</id>
+            <properties>
+                <spring.profiles.active>local</spring.profiles.active>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>true</filtering>
+                        <includes>
+                            <include>application-local.properties</include>
+                        </includes>
+                        <targetPath>${project.build.outputDirectory}</targetPath>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
             <id>dev</id>
             <properties>
                 <spring.profiles.active>dev</spring.profiles.active>
