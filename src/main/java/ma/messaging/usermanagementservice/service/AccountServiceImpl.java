@@ -57,11 +57,15 @@ public class AccountServiceImpl implements AccountService {
         // get user that is doing the request
         // find account that will be edited
         String usernameFromJwt = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        logger.info(String.format("usernameFromJwt=%s", usernameFromJwt));
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
-                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-            Account oldAccount = accountRepository.findById(id)
-                                              .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+                    .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            logger.info(String.format("userRequesting=%s", userRequesting));
+
+            Account oldAccount = accountRepository.findAccountByAccount_id(id)
+                    .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+            logger.info(String.format("user=%s", oldAccount));
                                               
             String usernameFromId = oldAccount.getUsername();
 
@@ -162,7 +166,7 @@ public class AccountServiceImpl implements AccountService {
         try {
             Account userRequesting = accountRepository.findByUsername(usernameFromJwt)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
-            Account user = accountRepository.findById(id)
+            Account user = accountRepository.findAccountByAccount_id(id)
                                               .orElseThrow(() -> new RuntimeException("Error: User is not found."));
             
             // if user requesting isnt admin and wants to get someone else's account, do not allow 
