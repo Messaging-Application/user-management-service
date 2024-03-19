@@ -1,5 +1,7 @@
 package ma.messaging.usermanagementservice.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +17,7 @@ import com.google.gson.JsonObject;
 public class RedisServiceImpl implements RedisService {
 
     private final Jedis jedis;
+    private static final Logger logger = LoggerFactory.getLogger(RedisServiceImpl.class);
 
     public RedisServiceImpl(@Value("${spring.redis.host}") String redisHost) {
         this.jedis = new Jedis(redisHost, 6379); // Connect to Redis server
@@ -78,17 +81,22 @@ public class RedisServiceImpl implements RedisService {
 
     @Override
     public void deleteUserFromRedis(Account user) {
-        Set<String> keys = jedis.keys("*"); 
+        logger.info("entered deleteUserFromRedis");
+        Set<String> keys = jedis.keys("*");
+        logger.info(String.format("redisKeys=%s", keys));
         if (keys != null) {
             for (String key : keys) {
                 String value = jedis.get(key);
+                logger.info(String.format("key=%s, value=%s", key, value));
                 Gson gson = new Gson();
                 JsonObject jsonObject = gson.fromJson(value, JsonObject.class);
 
                 int user1Id = jsonObject.getAsJsonObject("user1").get("id").getAsInt();
+                logger.info(String.format("user1Id=%s", user1Id));
                 int user2Id = jsonObject.getAsJsonObject("user2").get("id").getAsInt();
-
+                logger.info(String.format("user2Id=%s", user2Id));
                 if (user1Id == user.getAccount_id() || user2Id == user.getAccount_id()) {
+                    logger.info(String.format("true, account_id", user.getAccount_id()));
                     jedis.del(key);
                 }
             }
