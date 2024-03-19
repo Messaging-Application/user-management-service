@@ -1,0 +1,5 @@
+/home/ec2-user/user-management-service/src/test/java/ma/messaging/usermanagementservice/repository/RoleRepositoryTest.java
+/home/ec2-user/user-management-service/src/test/java/ma/messaging/usermanagementservice/AccountManagementServiceApplicationTests.java
+/home/ec2-user/user-management-service/src/test/java/ma/messaging/usermanagementservice/repository/AccountRepositoryTest.java
+/home/ec2-user/user-management-service/src/test/java/ma/messaging/usermanagementservice/auth/AuthServiceTest.java
+/home/ec2-user/user-management-service/src/test/java/ma/messaging/usermanagementservice/controller/AuthControllerTest.java
