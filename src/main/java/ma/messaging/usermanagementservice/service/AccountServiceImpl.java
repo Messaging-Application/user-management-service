@@ -132,6 +132,7 @@ public class AccountServiceImpl implements AccountService {
             String usernameFromId = user.getUsername();
             boolean[] isAdmin = {false};
             List<Role> roles = accountRepository.findRolesByAccountId(userRequesting.getAccount_id());
+
             roles.forEach(role -> {
                 System.out.println(role.getName());
                 if (role.getName() == ERole.ROLE_ADMIN) {
@@ -142,8 +143,10 @@ public class AccountServiceImpl implements AccountService {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
             }
             accountRepository.deleteAccountByAccount_id(id);
+            logger.info("redis before");
             // update redis according to the database
             redisService.deleteUserFromRedis(user);
+            logger.info("redis after");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
