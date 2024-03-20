@@ -66,6 +66,9 @@ jobs:
           distribution: 'temurin' 
           java-version: 17
 
+      - name: Set the Spring profile
+        run: export SPRING_PROFILES_ACTIVE=dev
+
       - name: Clean Maven project
         run: mvn clean
 

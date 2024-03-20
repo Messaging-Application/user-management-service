@@ -16,6 +16,9 @@ RUN mvn -f /app/pom.xml clean package -DskipTests
 # For the final image, use an OpenJDK 17 runtime
 FROM openjdk:17-jdk-slim
 
+# Set the Spring profiles active environment variable
+ENV SPRING_PROFILES_ACTIVE=dev
+
 # Copy the jar from the build stage to the final image
 COPY --from=build /app/target/*.jar /usr/local/lib/app.jar
 

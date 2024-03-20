@@ -1,5 +1,7 @@
 package ma.messaging.usermanagementservice.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +17,7 @@ import com.google.gson.JsonObject;
 public class RedisServiceImpl implements RedisService {
 
     private final Jedis jedis;
+    private static final Logger logger = LoggerFactory.getLogger(RedisServiceImpl.class);
 
     public RedisServiceImpl(@Value("${spring.redis.host}") String redisHost) {
         this.jedis = new Jedis(redisHost, 6379); // Connect to Redis server
@@ -49,10 +52,10 @@ public class RedisServiceImpl implements RedisService {
                 int user1Id = jsonObject.getAsJsonObject("user1").get("id").getAsInt();
                 int user2Id = jsonObject.getAsJsonObject("user2").get("id").getAsInt();
 
-                if (user1Id == user.getId()) {
+                if (user1Id == user.getAccount_id()) {
                     keyValuePairs.put(key, value);
                 }
-                if (user2Id == user.getId()) {
+                if (user2Id == user.getAccount_id()) {
                     keyValuePairs.put(key, value);
                 }
             }
@@ -78,17 +81,22 @@ public class RedisServiceImpl implements RedisService {
 
     @Override
     public void deleteUserFromRedis(Account user) {
-        Set<String> keys = jedis.keys("*"); 
+        logger.info("entered deleteUserFromRedis");
+        Set<String> keys = jedis.keys("*");
+        logger.info(String.format("redisKeys=%s", keys));
         if (keys != null) {
             for (String key : keys) {
                 String value = jedis.get(key);
+                logger.info(String.format("key=%s, value=%s", key, value));
                 Gson gson = new Gson();
                 JsonObject jsonObject = gson.fromJson(value, JsonObject.class);
 
                 int user1Id = jsonObject.getAsJsonObject("user1").get("id").getAsInt();
+                logger.info(String.format("user1Id=%s", user1Id));
                 int user2Id = jsonObject.getAsJsonObject("user2").get("id").getAsInt();
-
-                if (user1Id == user.getId() || user2Id == user.getId()) {
+                logger.info(String.format("user2Id=%s", user2Id));
+                if (user1Id == user.getAccount_id() || user2Id == user.getAccount_id()) {
+                    logger.info(String.format("true, account_id", user.getAccount_id()));
                     jedis.del(key);
                 }
             }
@@ -107,10 +115,10 @@ public class RedisServiceImpl implements RedisService {
                 int user1Id = jsonObject.getAsJsonObject("user1").get("id").getAsInt();
                 int user2Id = jsonObject.getAsJsonObject("user2").get("id").getAsInt();
 
-                if (user1Id == user.getId()) {
+                if (user1Id == user.getAccount_id()) {
                     String newValue = "{\"user1\": {" +
                     "\"username\": \"" + user.getUsername() + "\", " +
-                    "\"id\": \"" + user.getId() + "\", " +
+                    "\"id\": \"" + user.getAccount_id() + "\", " +
                     "\"email\": \"" + user.getEmail() + "\", " +
                     "\"lastName\": \"" + user.getLastName() + "\", " +
                     "\"firstName\": \"" + user.getFirstName() + "\"}, " +
@@ -121,7 +129,7 @@ public class RedisServiceImpl implements RedisService {
                     "\"lastName\": \"" + jsonObject.getAsJsonObject("user2").get("lastName").getAsString() + "\", " +
                     "\"firstName\": \"" + jsonObject.getAsJsonObject("user2").get("firstName").getAsString() + "\"}}";
                     storeKeyValuePair(key, newValue);
-                } else if (user2Id == user.getId()) {
+                } else if (user2Id == user.getAccount_id()) {
                     String newValue = "{\"user1\": {" +
                     "\"username\": \"" + jsonObject.getAsJsonObject("user1").get("username").getAsString() + "\", " +
                     "\"id\": \"" + jsonObject.getAsJsonObject("user1").get("id").getAsInt() + "\", " +
@@ -130,7 +138,7 @@ public class RedisServiceImpl implements RedisService {
                     "\"firstName\": \"" + jsonObject.getAsJsonObject("user1").get("firstName").getAsString() + "\"}, " +
                     "\"user2\": {" +
                     "\"username\": \"" + user.getUsername() + "\", " +
-                    "\"id\": \"" + user.getId() + "\", " +
+                    "\"id\": \"" + user.getAccount_id() + "\", " +
                     "\"email\": \"" + user.getEmail() + "\", " +
                     "\"lastName\": \"" + user.getLastName() + "\", " +
                     "\"firstName\": \"" + user.getFirstName() + "\"}}";

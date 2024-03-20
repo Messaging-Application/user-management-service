@@ -17,7 +17,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @ToString
-@Table(name = "account",
+@Table(name = "accounts",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = "username"),
                 @UniqueConstraint(columnNames = "email")
@@ -31,7 +31,7 @@ public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private int account_id;
 
     @Size(min = MIN_USERNAME_SIZE, max = MAX_USERNAME_SIZE)
     private String username;
