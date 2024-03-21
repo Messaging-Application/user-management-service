@@ -67,7 +67,7 @@ jobs:
           java-version: 17
 
       - name: Set the Spring profile
-        run: export SPRING_PROFILES_ACTIVE=dev
+        run: export SPRING_PROFILES_ACTIVE=local
 
       - name: Clean Maven project
         run: mvn clean
