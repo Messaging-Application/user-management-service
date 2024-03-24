@@ -18,28 +18,40 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app:  user-management-service
+      app: user-management-service
   replicas: 1
   template:
     metadata:
       labels:
-        app:  user-management-service
+        app: user-management-service
     spec:
       containers:
       - image: dasha12678/user-management-service:latest
         name: user-management-service
         imagePullPolicy: Always
         ports:
-        - containerPort: 8081 #port for user-management-service 
+        - containerPort: 8081 # port for user-management-service
         env:
         - name: DB_HOST
-          value: "jdbc:postgresql://${DB_HOST}"
+          valueFrom:
+            secretKeyRef:
+                name: dbhost
+                key: DB_HOST
         - name: DB_USER
-          value: "${DB_USER}"
+          valueFrom:
+            secretKeyRef:
+              name: dbuser
+              key: DB_USER
         - name: DB_PASSWORD
-          value: "${DB_PASSWORD}"   
+          valueFrom:
+            secretKeyRef:
+              name: dbpassword
+              key: DB_PASSWORD
         - name: REDIS_HOST
-          value: "${REDIS_HOST}"
+          valueFrom:
+            secretKeyRef:
+              name: redishost
+              key: REDIS_HOST
         - name: REDIS_PORT
-          value: "${REDIS_PORT}"
+          value: "6379"   
       restartPolicy: Always
