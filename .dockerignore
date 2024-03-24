@@ -1,0 +1,11 @@
+target/
+Dockerfile
+docker-compose.yml
+.dockerignore
+*.tmp
+*.bak
+*.log
+.git
+.gitignore
+service/
+LICENSE
